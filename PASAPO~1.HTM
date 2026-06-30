@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pasaporte Americano | Trámite GO</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --green:#16a34a; --green-light:#22c55e; --green-bg:#f0fdf4;
+    --green-border:#bbf7d0; --navy:#0f172a; --navy-mid:#1e3a5f;
+    --gray:#64748b; --gray-light:#f8fafc; --gray-border:#e2e8f0;
+    --red:#ef4444; --amber:#f59e0b; --amber-bg:#fffbeb; --amber-border:#fde68a;
+    --blue:#3b82f6; --blue-bg:#eff6ff; --blue-border:#bfdbfe;
+    --shadow:0 4px 24px rgba(0,0,0,.08); --radius:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--green-bg);color:var(--navy);min-height:100vh;padding:0 0 60px;}
+
+  /* HEADER */
+  .header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%);padding:24px 20px;text-align:center;position:relative;overflow:hidden;}
+  .header::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;background:var(--green);opacity:.12;border-radius:50%;}
+  .header::after{content:'';position:absolute;bottom:-50px;left:-30px;width:140px;height:140px;background:var(--green-light);opacity:.08;border-radius:50%;}
+  .logo-wrap{display:inline-flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .logo-icon{width:48px;height:48px;background:var(--green);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:white;}
+  .logo-text .brand{font-size:22px;font-weight:800;color:white;line-height:1;}
+  .logo-text .brand span{color:var(--green-light);}
+  .logo-text .tagline{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;}
+  .header-title{font-size:18px;font-weight:700;color:white;}
+  .header-sub{font-size:13px;color:rgba(255,255,255,.65);margin-top:4px;}
+  .badge{display:inline-flex;align-items:center;gap:5px;background:rgba(22,163,74,.2);border:1px solid rgba(34,197,94,.3);color:#86efac;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;margin-top:10px;}
+
+  /* TIPO SELECTOR */
+  .tipo-selector{max-width:680px;margin:24px auto 0;padding:0 16px;}
+  .tipo-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:480px){.tipo-cards{grid-template-columns:1fr;}}
+  .tipo-card{background:white;border:2.5px solid var(--gray-border);border-radius:var(--radius);padding:20px;cursor:pointer;transition:all .2s;text-align:center;box-shadow:var(--shadow);}
+  .tipo-card:hover{border-color:var(--green);transform:translateY(-2px);}
+  .tipo-card.selected{border-color:var(--green);background:var(--green-bg);}
+  .tipo-card .tipo-icon{font-size:36px;margin-bottom:10px;}
+  .tipo-card .tipo-title{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+  .tipo-card .tipo-sub{font-size:12px;color:var(--gray);}
+  .tipo-card .tipo-form{font-size:11px;font-weight:600;color:var(--green);background:var(--green-bg);border:1px solid var(--green-border);border-radius:20px;padding:3px 10px;display:inline-block;margin-top:8px;}
+
+  /* PROGRESS */
+  .progress-wrap{background:white;border-bottom:1px solid var(--gray-border);padding:16px 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+  .progress-bar-bg{background:var(--gray-border);border-radius:100px;height:6px;margin-bottom:8px;}
+  .progress-bar-fill{background:linear-gradient(90deg,var(--green),var(--green-light));height:100%;border-radius:100px;transition:width .4s ease;}
+  .progress-info{display:flex;justify-content:space-between;align-items:center;}
+  .progress-label{font-size:12px;color:var(--gray);font-weight:500;}
+  .progress-steps{font-size:12px;color:var(--green);font-weight:700;}
+
+  /* CARDS */
+  .container{max-width:680px;margin:0 auto;padding:24px 16px;}
+  .card{background:white;border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 24px;margin-bottom:20px;border:1px solid var(--gray-border);display:none;}
+  .card.active{display:block;}
+  .section-header{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid var(--green-bg);}
+  .section-icon{width:42px;height:42px;min-width:42px;background:var(--green-bg);border:2px solid var(--green-border);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .section-title{font-size:17px;font-weight:700;color:var(--navy);}
+  .section-sub{font-size:12px;color:var(--gray);margin-top:2px;}
+
+  /* FIELDS */
+  .field{margin-bottom:18px;}
+  .field label{display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px;}
+  .req{color:var(--red);margin-left:2px;}
+  .opt{color:var(--gray);font-weight:400;font-size:11px;margin-left:4px;}
+  .field input,.field select,.field textarea{width:100%;padding:10px 14px;border:1.5px solid var(--gray-border);border-radius:8px;font-size:14px;color:var(--navy);background:var(--gray-light);transition:border-color .2s,box-shadow .2s;outline:none;font-family:inherit;}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(22,163,74,.1);background:white;}
+  .field textarea{resize:vertical;min-height:80px;}
+  .field .hint{font-size:11px;color:var(--gray);margin-top:5px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  @media(max-width:520px){.two-col,.three-col{grid-template-columns:1fr;}}
+
+  /* RADIO */
+  .radio-group{display:flex;gap:10px;flex-wrap:wrap;}
+  .radio-item{display:flex;align-items:center;gap:8px;padding:8px 14px;border:1.5px solid var(--gray-border);border-radius:8px;cursor:pointer;transition:all .15s;background:var(--gray-light);}
+  .radio-item:hover,.radio-item.selected{border-color:var(--green);background:var(--green-bg);}
+  .radio-item input[type=radio]{accent-color:var(--green);width:15px;height:15px;}
+  .radio-item label{font-size:13px;color:var(--navy);cursor:pointer;margin:0;font-weight:500;}
+
+  /* CHECKBOX */
+  .checkbox-group{display:flex;flex-direction:column;gap:8px;}
+  .check-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--gray-border);border-radius:8px;cursor:pointer;transition:all .15s;background:var(--gray-light);}
+  .check-item:hover,.check-item.checked{border-color:var(--green);background:var(--green-bg);}
+  .check-item input[type=checkbox]{accent-color:var(--green);width:16px;height:16px;cursor:pointer;}
+  .check-item label{font-size:14px;color:var(--navy);cursor:pointer;margin:0;font-weight:500;}
+  .check-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;}
+
+  /* BOXES */
+  .info-box{background:var(--green-bg);border:1px solid var(--green-border);border-radius:10px;padding:14px 16px;font-size:13px;color:#166534;margin-bottom:20px;display:flex;gap:10px;line-height:1.5;}
+  .warn-box{background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:10px;padding:14px 16px;font-size:13px;color:#92400e;margin-bottom:20px;display:flex;gap:10px;line-height:1.5;}
+  .blue-box{background:var(--blue-bg);border:1px solid var(--blue-border);border-radius:10px;padding:14px 16px;font-size:13px;color:#1e40af;margin-bottom:20px;display:flex;gap:10px;line-height:1.5;}
+
+  /* RENOVACION ONLY / PRIMERA VEZ ONLY */
+  .only-renovacion,.only-primera{display:none;}
+  body.tramite-primera .only-primera{display:block;}
+  body.tramite-renovacion .only-renovacion{display:block;}
+
+  /* NAV */
+  .nav-buttons{display:flex;gap:12px;margin-top:8px;}
+  .btn{padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s;font-family:inherit;display:inline-flex;align-items:center;gap:8px;}
+  .btn-primary{background:var(--green);color:white;flex:1;justify-content:center;}
+  .btn-primary:hover{background:#15803d;transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.3);}
+  .btn-secondary{background:white;color:var(--gray);border:1.5px solid var(--gray-border);}
+  .btn-secondary:hover{background:var(--gray-light);color:var(--navy);}
+  .btn-whatsapp{background:#25D366;color:white;flex:1;justify-content:center;}
+  .btn-whatsapp:hover{background:#128C7E;transform:translateY(-1px);}
+
+  /* LOADING */
+  #pdf-loading{display:none;position:fixed;inset:0;background:rgba(15,23,42,.7);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+  #pdf-loading.show{display:flex;}
+  .spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,.2);border-top-color:var(--green-light);border-radius:50%;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-text{color:white;font-size:15px;font-weight:600;}
+
+  /* SUCCESS */
+  #success-screen{display:none;text-align:center;padding:40px 20px;}
+  .success-icon{width:80px;height:80px;background:var(--green-bg);border:3px solid var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px;}
+  .success-title{font-size:22px;font-weight:800;color:var(--navy);margin-bottom:8px;}
+  .success-sub{font-size:14px;color:var(--gray);margin-bottom:28px;max-width:440px;margin-left:auto;margin-right:auto;line-height:1.6;}
+  .success-actions{display:flex;flex-direction:column;gap:12px;max-width:380px;margin:0 auto;}
+  .pdf-steps{background:var(--green-bg);border:1px solid var(--green-border);border-radius:10px;padding:16px;margin-bottom:20px;font-size:13px;color:#166534;}
+  .pdf-steps ol{margin-left:20px;margin-top:8px;line-height:2;}
+
+  /* FIRMA */
+  .firma-input{width:100%;border:none;border-bottom:2px solid var(--navy);background:transparent;font-size:22px;font-family:'Brush Script MT',cursive;color:var(--navy);padding:8px 0;text-align:center;outline:none;}
+  .firma-box{border:2px dashed var(--gray-border);border-radius:8px;padding:16px;background:var(--gray-light);text-align:center;}
+
+  .form-footer{text-align:center;font-size:11px;color:var(--gray);margin-top:24px;padding:0 16px;line-height:1.6;}
+  .form-footer a{color:var(--green);text-decoration:none;}
+
+  /* TIPO INTRO */
+  #tipo-intro{padding:0 0 8px;}
+  .tipo-intro-title{font-size:20px;font-weight:800;color:var(--navy);text-align:center;margin-bottom:6px;}
+  .tipo-intro-sub{font-size:13px;color:var(--gray);text-align:center;margin-bottom:20px;}
+  .btn-start{width:100%;margin-top:16px;justify-content:center;font-size:16px;padding:14px;}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="pdf-loading"><div class="spinner"></div><div class="loading-text">Generando PDF...</div></div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo-wrap">
+    <div class="logo-icon">TG</div>
+    <div class="logo-text">
+      <div class="brand">Trámite <span>GO</span></div>
+      <div class="tagline">Asesoría Migratoria y Documental</div>
+    </div>
+  </div>
+  <div class="header-title">🇺🇸 Pasaporte Americano</div>
+  <div class="header-sub">Primera vez (DS-11) · Renovación (DS-82)</div>
+  <div class="badge">🔒 100% Confidencial</div>
+</div>
+
+<!-- PROGRESS (oculto al inicio) -->
+<div class="progress-wrap" id="progress-wrap" style="display:none;">
+  <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+  <div class="progress-info">
+    <span class="progress-label" id="progress-label">Iniciando...</span>
+    <span class="progress-steps" id="progress-pct">0%</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- SELECTOR DE TIPO -->
+  <div id="tipo-intro">
+    <div style="background:white;border-radius:var(--radius);box-shadow:var(--shadow);padding:28px 24px;border:1px solid var(--gray-border);">
+      <div class="tipo-intro-title">¿Qué trámite necesita?</div>
+      <div class="tipo-intro-sub">Seleccione el tipo de solicitud para personalizar el cuestionario</div>
+      <div class="tipo-cards">
+        <div class="tipo-card" id="card-primera" onclick="seleccionarTipo('primera')">
+          <div class="tipo-icon">🆕</div>
+          <div class="tipo-title">Primera vez</div>
+          <div class="tipo-sub">Nunca ha tenido pasaporte americano o su pasaporte anterior tiene más de 15 años</div>
+          <div class="tipo-form">Formulario DS-11</div>
+        </div>
+        <div class="tipo-card" id="card-renovacion" onclick="seleccionarTipo('renovacion')">
+          <div class="tipo-icon">🔄</div>
+          <div class="tipo-title">Renovación</div>
+          <div class="tipo-sub">Ya tiene un pasaporte americano vigente o vencido hace menos de 15 años</div>
+          <div class="tipo-form">Formulario DS-82</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-start" id="btn-start" onclick="iniciarFormulario()" style="display:none;">
+        Comenzar cuestionario →
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SECCIÓN 1: DATOS PERSONALES
+  ══════════════════════════════════════════════════════════ -->
+  <div class="card" id="section-1">
+    <div class="section-header"><div class="section-icon">👤</div><div><div class="section-title">1. Datos Personales</div><div class="section-sub">Información de identificación</div></div></div>
+    <div class="info-box"><span>ℹ️</span><span>Complete exactamente como aparece en su acta de nacimiento o documentos de ciudadanía. Si un campo no aplica, escriba <strong>N/A</strong>.</span></div>
+
+    <div class="two-col">
+      <div class="field"><label>Apellido(s) <span class="req">*</span></label><input type="text" id="apellidos" placeholder="Ej. García López"></div>
+      <div class="field"><label>Nombre(s) <span class="req">*</span></label><input type="text" id="nombres" placeholder="Ej. María Elena"></div>
+    </div>
+    <div class="field"><label>¿Ha utilizado otros nombres? <span class="opt">(alias, nombre de casado/a, etc.)</span></label>
+      <div class="radio-group">
+        <div class="radio-item" onclick="selectRadio(this,'otros_nombres_rb','Sí')"><input type="radio" name="otros_nombres_rb" value="Sí"><label>Sí</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'otros_nombres_rb','No')"><input type="radio" name="otros_nombres_rb" value="No"><label>No</label></div>
+      </div>
+    </div>
+    <div class="field"><label>Otros nombres <span class="opt">(si aplica)</span></label><input type="text" id="otros_nombres" placeholder="Nombre(s) anterior(es) o adicionales"></div>
+
+    <div class="three-col">
+      <div class="field"><label>Fecha de nacimiento <span class="req">*</span></label><input type="date" id="fecha_nacimiento"></div>
+      <div class="field"><label>Género</label>
+        <select id="genero"><option value="">Seleccione</option><option>Masculino</option><option>Femenino</option><option>X (No binario)</option></select>
+      </div>
+      <div class="field"><label>Lugar de nacimiento <span class="req">*</span></label><input type="text" id="lugar_nacimiento" placeholder="Ciudad, Estado, País"></div>
+    </div>
+
+    <div class="two-col">
+      <div class="field"><label>Número de Seguro Social (SSN) <span class="req">*</span></label><input type="text" id="ssn" placeholder="XXX-XX-XXXX"><div class="hint">Requerido por ley federal</div></div>
+      <div class="field"><label>Estado civil</label>
+        <select id="estado_civil"><option value="">Seleccione</option><option>Soltero(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viudo(a)</option><option>Separado(a)</option></select>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="field"><label>Altura</label><input type="text" id="altura" placeholder="Ej. 5'7'' o 1.70 m"></div>
+      <div class="field"><label>Color de ojos</label>
+        <select id="color_ojos"><option value="">Seleccione</option><option>Café</option><option>Negro</option><option>Azul</option><option>Verde</option><option>Gris</option><option>Avellana</option></select>
+      </div>
+    </div>
+
+    <div class="nav-buttons"><button class="btn btn-primary" onclick="nextSection(1)">Siguiente →</button></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SECCIÓN 2: CONTACTO Y DOMICILIO
+  ══════════════════════════════════════════════════════════ -->
+  <div class="card" id="section-2">
+    <div class="section-header"><div class="section-icon">📍</div><div><div class="section-title">2. Contacto y Domicilio</div><div class="section-sub">Dirección e información de contacto</div></div></div>
+
+    <div class="field"><label>Dirección completa actual <span class="req">*</span></label><input type="text" id="direccion" placeholder="Calle, número, ciudad, estado, código postal, país"></div>
+    <div class="field"><label>¿Es esta su dirección permanente?</label>
+      <div class="radio-group">
+        <div class="radio-item" onclick="selectRadio(this,'dir_permanente','Sí')"><input type="radio" name="dir_permanente" value="Sí"><label>Sí</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'dir_permanente','No')"><input type="radio" name="dir_permanente" value="No"><label>No</label></div>
+      </div>
+    </div>
+    <div class="field"><label>Dirección permanente <span class="opt">(si es diferente a la anterior)</span></label><input type="text" id="dir_permanente_txt" placeholder="Dirección permanente"></div>
+
+    <div class="two-col">
+      <div class="field"><label>Teléfono / WhatsApp <span class="req">*</span></label><input type="tel" id="telefono" placeholder="+1 619 123 4567"></div>
+      <div class="field"><label>Correo electrónico</label><input type="email" id="email" placeholder="correo@ejemplo.com"></div>
+    </div>
+
+    <div class="field"><label>Ocupación / Profesión</label><input type="text" id="ocupacion" placeholder="Ej. Maestro, Enfermero, Empleado, etc."></div>
+    <div class="field"><label>Empleador / Escuela <span class="opt">(si aplica)</span></label><input type="text" id="empleador" placeholder="Nombre del empleador o institución"></div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevSection(2)">← Atrás</button>
+      <button class="btn btn-primary" onclick="nextSection(2)">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SECCIÓN 3: CIUDADANÍA AMERICANA
+  ══════════════════════════════════════════════════════════ -->
+  <div class="card" id="section-3">
+    <div class="section-header"><div class="section-icon">🇺🇸</div><div><div class="section-title">3. Ciudadanía Americana</div><div class="section-sub">¿Cómo adquirió la ciudadanía?</div></div></div>
+
+    <div class="field"><label>¿Cómo adquirió la ciudadanía estadounidense? <span class="req">*</span></label>
+      <div class="checkbox-group check-grid" id="como_ciudadano">
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Nacimiento en EE.UU."><label>🏥 Nacimiento en EE.UU.</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Nacimiento en el extranjero de padre/madre ciudadano"><label>🌎 Nacimiento en el extranjero (padre/madre ciudadano)</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Naturalización"><label>📜 Naturalización</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Derivada (a través de padres)"><label>👨‍👩‍👧 Derivada (a través de padres)</label></div>
+      </div>
+    </div>
+
+    <div class="field"><label>Documento de ciudadanía que posee</label>
+      <div class="checkbox-group check-grid" id="docs_ciudadania">
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Acta de nacimiento americana"><label>📋 Acta de nacimiento americana</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Certificado de naturalización (N-550/N-570)"><label>📜 Certificado de naturalización</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Certificado de ciudadanía (N-560/N-561)"><label>🏛️ Certificado de ciudadanía</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="CRBA (FS-240)"><label>🗂️ CRBA (FS-240)</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Pasaporte americano anterior"><label>🛂 Pasaporte americano anterior</label></div>
+      </div>
+    </div>
+
+    <!-- Solo primera vez -->
+    <div class="only-primera">
+      <div class="blue-box"><span>ℹ️</span><span>Para <strong>primera solicitud (DS-11)</strong>, debe presentarse en persona en una oficina de pasaportes con sus documentos originales.</span></div>
+      <div class="field"><label>¿Es menor de 16 años?</label>
+        <div class="radio-group">
+          <div class="radio-item" onclick="selectRadio(this,'menor_16','Sí')"><input type="radio" name="menor_16" value="Sí"><label>Sí</label></div>
+          <div class="radio-item" onclick="selectRadio(this,'menor_16','No')"><input type="radio" name="menor_16" value="No"><label>No</label></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevSection(3)">← Atrás</button>
+      <button class="btn btn-primary" onclick="nextSection(3)">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SECCIÓN 4: INFORMACIÓN DEL PASAPORTE ACTUAL
+       (Solo renovación)
+  ══════════════════════════════════════════════════════════ -->
+  <div class="card" id="section-4">
+    <div class="section-header"><div class="section-icon">🛂</div><div><div class="section-title">4. Pasaporte Actual / Anterior</div><div class="section-sub" id="s4-sub">Información del pasaporte que tiene en mano</div></div></div>
+
+    <!-- Renovación -->
+    <div class="only-renovacion">
+      <div class="info-box"><span>✅</span><span>Para <strong>renovación (DS-82)</strong>, debe incluir su pasaporte más reciente. No necesita presentarse en persona si tiene más de 16 años.</span></div>
+    </div>
+    <!-- Primera vez -->
+    <div class="only-primera">
+      <div class="info-box"><span>📋</span><span>Si tuvo un pasaporte americano anterior, proporcione sus datos. Si nunca ha tenido, escriba <strong>N/A</strong> en los campos.</span></div>
+    </div>
+
+    <div class="two-col">
+      <div class="field"><label>Número de pasaporte</label><input type="text" id="pasaporte_num" placeholder="Ej. 123456789"></div>
+      <div class="field"><label>Fecha de emisión</label><input type="date" id="pasaporte_emision"></div>
+    </div>
+    <div class="two-col">
+      <div class="field"><label>Fecha de vencimiento</label><input type="date" id="pasaporte_vence"></div>
+      <div class="field"><label>Ciudad/país donde fue emitido</label><input type="text" id="pasaporte_lugar" placeholder="Ej. Los Angeles, CA"></div>
+    </div>
+
+    <div class="field"><label>Estado del pasaporte actual</label>
+      <div class="radio-group" style="flex-wrap:wrap;">
+        <div class="radio-item" onclick="selectRadio(this,'estado_pasaporte','Vigente')"><input type="radio" name="estado_pasaporte" value="Vigente"><label>✅ Vigente</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'estado_pasaporte','Vencido')"><input type="radio" name="estado_pasaporte" value="Vencido"><label>⌛ Vencido</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'estado_pasaporte','Perdido')"><input type="radio" name="estado_pasaporte" value="Perdido"><label>🔍 Perdido</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'estado_pasaporte','Robado')"><input type="radio" name="estado_pasaporte" value="Robado"><label>🚨 Robado</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'estado_pasaporte','Dañado')"><input type="radio" name="estado_pasaporte" value="Dañado"><label>🗓️ Dañado</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'estado_pasaporte','Nunca tuve')"><input type="radio" name="estado_pasaporte" value="Nunca tuve"><label>🆕 Nunca tuve</label></div>
+      </div>
+    </div>
+
+    <div class="field"><label>¿Su nombre ha cambiado desde que se emitió el pasaporte?</label>
+      <div class="radio-group">
+        <div class="radio-item" onclick="selectRadio(this,'nombre_cambio','Sí')"><input type="radio" name="nombre_cambio" value="Sí"><label>Sí</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'nombre_cambio','No')"><input type="radio" name="nombre_cambio" value="No"><label>No</label></div>
+      </div>
+    </div>
+    <div class="field"><label>Nombre como aparece en pasaporte anterior <span class="opt">(si cambió)</span></label><input type="text" id="nombre_anterior" placeholder="Nombre en el pasaporte anterior"></div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevSection(4)">← Atrás</button>
+      <button class="btn btn-primary" onclick="nextSection(4)">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SECCIÓN 5: INFORMACIÓN DE LOS PADRES
+  ══════════════════════════════════════════════════════════ -->
+  <div class="card" id="section-5">
+    <div class="section-header"><div class="section-icon">👨‍👩‍👧</div><div><div class="section-title">5. Información de los Padres</div><div class="section-sub">Requerida para verificar ciudadanía</div></div></div>
+    <div class="info-box"><span>ℹ️</span><span>Proporcione los datos de <strong>ambos padres</strong> aunque no sean ciudadanos americanos. Si no conoce algún dato, escriba "No sé".</span></div>
+
+    <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px;padding:8px 12px;background:var(--green-bg);border-radius:8px;">👨 Padre</div>
+    <div class="two-col">
+      <div class="field"><label>Nombre completo del padre</label><input type="text" id="padre_nombre" placeholder="Nombre completo"></div>
+      <div class="field"><label>Fecha de nacimiento</label><input type="date" id="padre_nacimiento"></div>
+    </div>
+    <div class="two-col">
+      <div class="field"><label>Lugar de nacimiento</label><input type="text" id="padre_lugar" placeholder="Ciudad, País"></div>
+      <div class="field"><label>Ciudadanía del padre al nacer usted</label><input type="text" id="padre_ciudadania" placeholder="Ej. Americana, Mexicana"></div>
+    </div>
+    <div class="field"><label>¿El padre era ciudadano americano cuando usted nació?</label>
+      <div class="radio-group">
+        <div class="radio-item" onclick="selectRadio(this,'padre_ciudadano_usa','Sí')"><input type="radio" name="padre_ciudadano_usa" value="Sí"><label>Sí</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'padre_ciudadano_usa','No')"><input type="radio" name="padre_ciudadano_usa" value="No"><label>No</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'padre_ciudadano_usa','No sé')"><input type="radio" name="padre_ciudadano_usa" value="No sé"><label>No sé</label></div>
+      </div>
+    </div>
+
+    <div style="font-size:13px;font-weight:700;color:var(--navy);margin:20px 0 12px;padding:8px 12px;background:var(--green-bg);border-radius:8px;">👩 Madre</div>
+    <div class="two-col">
+      <div class="field"><label>Nombre completo de la madre</label><input type="text" id="madre_nombre" placeholder="Nombre completo"></div>
+      <div class="field"><label>Fecha de nacimiento</label><input type="date" id="madre_nacimiento"></div>
+    </div>
+    <div class="two-col">
+      <div class="field"><label>Lugar de nacimiento</label><input type="text" id="madre_lugar" placeholder="Ciudad, País"></div>
+      <div class="field"><label>Ciudadanía de la madre al nacer usted</label><input type="text" id="madre_ciudadania" placeholder="Ej. Americana, Mexicana"></div>
+    </div>
+    <div class="field"><label>¿La madre era ciudadana americana cuando usted nació?</label>
+      <div class="radio-group">
+        <div class="radio-item" onclick="selectRadio(this,'madre_ciudadana_usa','Sí')"><input type="radio" name="madre_ciudadana_usa" value="Sí"><label>Sí</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'madre_ciudadana_usa','No')"><input type="radio" name="madre_ciudadana_usa" value="No"><label>No</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'madre_ciudadana_usa','No sé')"><input type="radio" name="madre_ciudadana_usa" value="No sé"><label>No sé</label></div>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevSection(5)">← Atrás</button>
+      <button class="btn btn-primary" onclick="nextSection(5)">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SECCIÓN 6: VIAJE Y URGENCIA
+  ══════════════════════════════════════════════════════════ -->
+  <div class="card" id="section-6">
+    <div class="section-header"><div class="section-icon">✈️</div><div><div class="section-title">6. Viaje Planeado</div><div class="section-sub">Fechas e información del viaje</div></div></div>
+
+    <div class="field"><label>¿Tiene un viaje planeado?</label>
+      <div class="radio-group">
+        <div class="radio-item" onclick="selectRadio(this,'tiene_viaje','Sí')"><input type="radio" name="tiene_viaje" value="Sí"><label>Sí</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'tiene_viaje','No')"><input type="radio" name="tiene_viaje" value="No"><label>No — aún no</label></div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="field"><label>Fecha de viaje <span class="opt">(si aplica)</span></label><input type="date" id="fecha_viaje"><div class="hint">Importante para solicitar tramitación urgente</div></div>
+      <div class="field"><label>País(es) de destino</label><input type="text" id="destino_viaje" placeholder="Ej. México, España, Francia"></div>
+    </div>
+    <div class="field"><label>Motivo del viaje</label>
+      <div class="radio-group" style="flex-wrap:wrap;">
+        <div class="radio-item" onclick="selectRadio(this,'motivo_viaje','Turismo')"><input type="radio" name="motivo_viaje" value="Turismo"><label>🏖️ Turismo</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'motivo_viaje','Negocios')"><input type="radio" name="motivo_viaje" value="Negocios"><label>💼 Negocios</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'motivo_viaje','Familia')"><input type="radio" name="motivo_viaje" value="Familia"><label>👨‍👩‍👧 Familia</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'motivo_viaje','Emergencia')"><input type="radio" name="motivo_viaje" value="Emergencia"><label>🚨 Emergencia</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'motivo_viaje','Estudio')"><input type="radio" name="motivo_viaje" value="Estudio"><label>📚 Estudio</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'motivo_viaje','Otro')"><input type="radio" name="motivo_viaje" value="Otro"><label>📄 Otro</label></div>
+      </div>
+    </div>
+
+    <div class="field"><label>¿Necesita trámite urgente? <span class="opt">(expedite)</span></label>
+      <div class="radio-group">
+        <div class="radio-item" onclick="selectRadio(this,'urgente','Sí — viaje en menos de 3 semanas')"><input type="radio" name="urgente" value="Sí — viaje en menos de 3 semanas"><label>🚀 Sí, viajo en menos de 3 semanas</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'urgente','No — tramitación normal')"><input type="radio" name="urgente" value="No — tramitación normal"><label>📅 No, tramitación normal</label></div>
+      </div>
+    </div>
+
+    <div class="field"><label>Tipo de pasaporte que desea</label>
+      <div class="radio-group">
+        <div class="radio-item" onclick="selectRadio(this,'tipo_pasaporte','Libro (regular)')"><input type="radio" name="tipo_pasaporte" value="Libro (regular)"><label>📘 Libro (regular)</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'tipo_pasaporte','Tarjeta (Card)')"><input type="radio" name="tipo_pasaporte" value="Tarjeta (Card)"><label>💳 Tarjeta (Card)</label></div>
+        <div class="radio-item" onclick="selectRadio(this,'tipo_pasaporte','Ambos')"><input type="radio" name="tipo_pasaporte" value="Ambos"><label>📘+💳 Ambos</label></div>
+      </div>
+    </div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevSection(6)">← Atrás</button>
+      <button class="btn btn-primary" onclick="nextSection(6)">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SECCIÓN 7: CONTACTO DE EMERGENCIA
+  ══════════════════════════════════════════════════════════ -->
+  <div class="card" id="section-7">
+    <div class="section-header"><div class="section-icon">🆘</div><div><div class="section-title">7. Contacto de Emergencia</div><div class="section-sub">Persona a contactar en caso de emergencia</div></div></div>
+
+    <div class="two-col">
+      <div class="field"><label>Nombre completo</label><input type="text" id="emerg_nombre" placeholder="Nombre del contacto"></div>
+      <div class="field"><label>Parentesco</label><input type="text" id="emerg_parentesco" placeholder="Ej. Esposo(a), Madre, Padre"></div>
+    </div>
+    <div class="two-col">
+      <div class="field"><label>Teléfono</label><input type="tel" id="emerg_telefono" placeholder="+1 619 123 4567"></div>
+      <div class="field"><label>Correo electrónico <span class="opt">(si aplica)</span></label><input type="email" id="emerg_email" placeholder="correo@ejemplo.com"></div>
+    </div>
+    <div class="field"><label>Dirección del contacto <span class="opt">(si aplica)</span></label><input type="text" id="emerg_direccion" placeholder="Ciudad, Estado, País"></div>
+
+    <div class="nav-buttons">
+      <button class="btn btn-secondary" onclick="prevSection(7)">← Atrás</button>
+      <button class="btn btn-primary" onclick="nextSection(7)">Siguiente →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SECCIÓN 8: DOCUMENTOS Y DECLARACIÓN
+  ══════════════════════════════════════════════════════════ -->
+  <div class="card" id="section-8">
+    <div class="section-header"><div class="section-icon">✍️</div><div><div class="section-title">8. Documentos y Declaración</div><div class="section-sub">Documentos disponibles y firma</div></div></div>
+
+    <div class="field"><label>Documentos que tiene disponibles:</label>
+      <div class="checkbox-group check-grid" id="documentos">
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Acta de nacimiento americana"><label>📋 Acta de nacimiento americana</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Pasaporte americano anterior"><label>🛂 Pasaporte americano anterior</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="ID con foto (licencia/ID estatal)"><label>🪪 ID con foto (licencia/ID)</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Certificado de naturalización"><label>📜 Certificado de naturalización</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Certificado de ciudadanía"><label>🏛️ Certificado de ciudadanía</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="CRBA (FS-240)"><label>🗂️ CRBA (FS-240)</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Foto de pasaporte (2x2 pulgadas)"><label>📷 Foto de pasaporte (2x2 in)</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Acta de matrimonio (cambio de nombre)"><label>💍 Acta de matrimonio</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Acta de nacimiento extranjera + traducción"><label>🌎 Acta extranjera + traducción</label></div>
+        <div class="check-item" onclick="toggleCheck(this)"><input type="checkbox" value="Reporte de robo/pérdida (DS-64)"><label>🚨 Reporte robo/pérdida (DS-64)</label></div>
+      </div>
+    </div>
+
+    <div class="field"><label>Otros documentos <span class="opt">(si aplica)</span></label><input type="text" id="otros_docs" placeholder="Documentos adicionales que tiene"></div>
+
+    <div class="field"><label>Información adicional o notas para Trámite GO <span class="opt">(si aplica)</span></label>
+      <textarea id="notas_adicionales" placeholder="Cuéntenos cualquier detalle especial, situación particular, pregunta o comentario sobre su trámite..."></textarea>
+    </div>
+
+    <div class="info-box" style="margin-top:20px;"><span>🔒</span><span>Su información es <strong>100% confidencial</strong>. Solo la verá el equipo de Trámite GO.</span></div>
+
+    <div class="field"><label>Firma electrónica <span class="opt">(escriba su nombre completo)</span></label>
+      <div class="firma-box">
+        <input type="text" class="firma-input" id="firma" placeholder="Escriba su nombre completo">
+        <div style="font-size:11px;margin-top:8px;color:var(--gray);">Firma electrónica con valor declarativo</div>
+      </div>
+    </div>
+    <div class="field"><label>Fecha</label><input type="date" id="fecha_firma"></div>
+
+    <div style="background:var(--green-bg);border:1px solid var(--green-border);border-radius:10px;padding:14px;font-size:13px;color:#166534;margin-bottom:20px;line-height:1.6;">
+      ✅ <strong>Declaro</strong> que toda la información proporcionada es <strong>verdadera y completa</strong> a mi leal saber y entender.
+    </div>
+
+    <div class="nav-buttons" style="flex-direction:column;">
+      <button class="btn btn-whatsapp" onclick="generarPDFyEnviar()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Generar PDF y Enviar por WhatsApp
+      </button>
+      <button class="btn btn-secondary" onclick="prevSection(8)" style="justify-content:center;">← Revisar información</button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="success-screen">
+    <div class="success-icon">✅</div>
+    <div class="success-title">¡PDF generado!</div>
+    <div class="success-sub" id="success-msg">El PDF fue descargado. Ahora ábralo en WhatsApp con Trámite GO para enviarlo como adjunto.</div>
+    <div class="pdf-steps">
+      <strong>Pasos para enviar el PDF:</strong>
+      <ol>
+        <li>El PDF ya fue descargado a su dispositivo</li>
+        <li>Abra WhatsApp con Trámite GO (botón abajo)</li>
+        <li>Toque el ícono de adjuntar 📎</li>
+        <li>Seleccione el PDF de su carpeta de descargas</li>
+        <li>Envíe el archivo</li>
+      </ol>
+    </div>
+    <div class="success-actions">
+      <button class="btn btn-whatsapp" style="width:100%;justify-content:center;" onclick="abrirWhatsApp()">💬 Abrir WhatsApp con Trámite GO</button>
+      <button class="btn btn-secondary" style="width:100%;justify-content:center;" onclick="descargarOtraVez()">⬇️ Descargar PDF nuevamente</button>
+      <button class="btn btn-secondary" style="width:100%;justify-content:center;" onclick="resetForm()">↺ Nuevo cuestionario</button>
+    </div>
+  </div>
+
+  <div class="form-footer">
+    <strong>Trámite GO</strong> · Asesoría migratoria y documental de confianza<br>
+    📍 Tijuana, B.C. México · 📞 <a href="tel:+5216645298312">+52 1 664 529 8312</a> · 📧 <a href="mailto:tramitesgomx@gmail.com">tramitesgomx@gmail.com</a><br>
+    <span style="color:#94a3b8;">Servicio privado e independiente · © 2026 Trámite GO</span>
+  </div>
+</div>
+
+<script>
+  let tipoTramite = '', currentSection = 0, pdfBlob = null, nombreCliente = '';
+  const totalSections = 8;
+  const sectionNames = ['Datos Personales','Contacto y Domicilio','Ciudadanía Americana','Pasaporte Actual/Anterior','Información de Padres','Viaje Planeado','Contacto de Emergencia','Documentos y Declaración'];
+
+  document.getElementById('fecha_firma').valueAsDate = new Date();
+
+  function seleccionarTipo(tipo) {
+    tipoTramite = tipo;
+    document.getElementById('card-primera').classList.toggle('selected', tipo==='primera');
+    document.getElementById('card-renovacion').classList.toggle('selected', tipo==='renovacion');
+    document.getElementById('btn-start').style.display = 'flex';
+    document.body.className = 'tramite-' + tipo;
+  }
+
+  function iniciarFormulario() {
+    if (!tipoTramite) return;
+    document.getElementById('tipo-intro').style.display = 'none';
+    document.getElementById('progress-wrap').style.display = 'block';
+    showSection(1);
+  }
+
+  function updateProgress(s) {
+    const p = Math.round((s/totalSections)*100);
+    document.getElementById('progress-fill').style.width = p+'%';
+    document.getElementById('progress-label').textContent = `Sección ${s} de ${totalSections}: ${sectionNames[s-1]}`;
+    document.getElementById('progress-pct').textContent = p+'%';
+  }
+
+  function showSection(n) {
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
+    const el = document.getElementById('section-'+n);
+    if(el){el.classList.add('active');updateProgress(n);window.scrollTo({top:0,behavior:'smooth'});}
+    currentSection = n;
+  }
+
+  function nextSection(f){showSection(f+1);}
+  function prevSection(f){showSection(f-1);}
+
+  function toggleCheck(item){const cb=item.querySelector('input[type=checkbox]');cb.checked=!cb.checked;item.classList.toggle('checked',cb.checked);}
+  function selectRadio(item,name){
+    document.querySelectorAll(`input[name="${name}"]`).forEach(r=>{r.checked=false;r.closest('.radio-item').classList.remove('selected');});
+    item.querySelector('input[type=radio]').checked=true;item.classList.add('selected');
+  }
+
+  function getRadio(name){const r=document.querySelector(`input[name="${name}"]:checked`);return r?r.value:'No especificado';}
+  function getChecked(id){const i=document.querySelectorAll(`#${id} input[type=checkbox]:checked`);const v=Array.from(i).map(x=>x.value);return v.length?v.join(', '):'Ninguno';}
+  function fmtDate(id){const v=document.getElementById(id).value;if(!v)return'No especificado';const d=new Date(v+'T00:00:00');return d.toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});}
+  function val(id){const el=document.getElementById(id);if(!el)return'No especificado';return el.value.trim()||'No especificado';}
+  function selVal(id){const el=document.getElementById(id);if(!el)return'No especificado';return el.value||'No especificado';}
+
+  // ─── PDF GENERATION ───
+  async function generarPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:'mm', format:'letter' });
+    const W=216, M=18, TW=W-M*2;
+    let y=0;
+
+    function newPage(){doc.addPage();y=20;}
+    function checkY(n=10){if(y+n>270)newPage();}
+
+    // HEADER
+    doc.setFillColor(15,23,42);doc.rect(0,0,W,40,'F');
+    doc.setFillColor(22,163,74);doc.roundedRect(M,8,22,22,4,4,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont('helvetica','bold');
+    doc.text('TG',M+11,22,{align:'center'});
+    doc.setFontSize(16);doc.text('Tramite GO',M+28,17);
+    doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(180,220,180);
+    doc.text('Asesoria Migratoria y Documental',M+28,23);
+    doc.setTextColor(255,255,255);doc.setFontSize(11);doc.setFont('helvetica','bold');
+    const tipoLabel = tipoTramite==='primera'?'PRIMERA VEZ (DS-11)':'RENOVACION (DS-82)';
+    doc.text(`CUESTIONARIO PASAPORTE AMERICANO — ${tipoLabel}`,W/2,34,{align:'center'});
+    y=48;
+
+    // META
+    doc.setFillColor(240,253,244);doc.rect(M,y,TW,10,'F');
+    doc.setTextColor(22,101,52);doc.setFontSize(8);doc.setFont('helvetica','normal');
+    const today=new Date().toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'});
+    doc.text(`Fecha: ${today}    |    Tipo: ${tipoLabel}    |    Documento confidencial — Tramite GO`,M+4,y+6.5);
+    y+=16;
+
+    function sectionHeader(num,title){
+      checkY(14);
+      doc.setFillColor(15,23,42);doc.rect(M,y,TW,9,'F');
+      doc.setTextColor(255,255,255);doc.setFontSize(9.5);doc.setFont('helvetica','bold');
+      doc.text(`${num}. ${title}`,M+4,y+6.2);
+      y+=13;
+    }
+
+    function field(label,value){
+      const display=(value==='No especificado'||!value)?'—':value;
+      const lines=doc.splitTextToSize(display,TW-58);
+      const needed=7+(lines.length-1)*5;
+      checkY(needed+4);
+      doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(100,116,139);
+      doc.text(label+':',M,y);
+      doc.setFont('helvetica','normal');doc.setTextColor(15,23,42);
+      doc.text(lines,M+58,y);
+      y+=needed;
+    }
+
+    function twoFields(l1,v1,l2,v2){
+      checkY(10);
+      const half=TW/2-4;
+      const v1d=(v1==='No especificado'||!v1)?'—':v1;
+      const v2d=(v2==='No especificado'||!v2)?'—':v2;
+      doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(100,116,139);
+      doc.text(l1+':',M,y);
+      doc.setFont('helvetica','normal');doc.setTextColor(15,23,42);
+      doc.text(doc.splitTextToSize(v1d,half-30),M+30,y);
+      doc.setFont('helvetica','bold');doc.setTextColor(100,116,139);
+      doc.text(l2+':',M+half+6,y);
+      doc.setFont('helvetica','normal');doc.setTextColor(15,23,42);
+      doc.text(doc.splitTextToSize(v2d,half-30),M+half+36,y);
+      y+=8;
+    }
+
+    function divider(){checkY(6);doc.setDrawColor(226,232,240);doc.setLineWidth(.3);doc.line(M,y,M+TW,y);y+=5;}
+    function subHeader(title){checkY(10);doc.setFillColor(240,253,244);doc.rect(M,y,TW,7,'F');doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(22,101,52);doc.text(title,M+3,y+5);y+=10;}
+
+    // S1
+    sectionHeader('1','DATOS PERSONALES');
+    twoFields('Apellido(s)',val('apellidos'),'Nombre(s)',val('nombres'));
+    twoFields('F. Nacimiento',fmtDate('fecha_nacimiento'),'Lugar de nacimiento',val('lugar_nacimiento'));
+    twoFields('Género',selVal('genero'),'Estado civil',selVal('estado_civil'));
+    twoFields('SSN',val('ssn'),'Altura',val('altura'));
+    twoFields('Color de ojos',selVal('color_ojos'),'Otros nombres',getRadio('otros_nombres_rb')+' — '+val('otros_nombres'));
+    divider();
+
+    // S2
+    sectionHeader('2','CONTACTO Y DOMICILIO');
+    field('Direccion actual',val('direccion'));
+    twoFields('Dir. permanente (distinta)',getRadio('dir_permanente'),'',' ');
+    field('Dir. permanente',val('dir_permanente_txt'));
+    twoFields('Telefono',val('telefono'),'Correo',val('email'));
+    twoFields('Ocupacion',val('ocupacion'),'Empleador/Escuela',val('empleador'));
+    divider();
+
+    // S3
+    sectionHeader('3','CIUDADANIA AMERICANA');
+    field('Como obtuvo ciudadania',getChecked('como_ciudadano'));
+    field('Documentos ciudadania',getChecked('docs_ciudadania'));
+    if(tipoTramite==='primera')field('Es menor de 16 años',getRadio('menor_16'));
+    divider();
+
+    // S4
+    sectionHeader('4','PASAPORTE ACTUAL / ANTERIOR');
+    twoFields('Numero de pasaporte',val('pasaporte_num'),'Fecha emision',fmtDate('pasaporte_emision'));
+    twoFields('Fecha vencimiento',fmtDate('pasaporte_vence'),'Lugar de emision',val('pasaporte_lugar'));
+    twoFields('Estado del pasaporte',getRadio('estado_pasaporte'),'Cambio de nombre',getRadio('nombre_cambio'));
+    field('Nombre anterior',val('nombre_anterior'));
+    divider();
+
+    // S5
+    sectionHeader('5','INFORMACION DE LOS PADRES');
+    subHeader('PADRE');
+    twoFields('Nombre',val('padre_nombre'),'F. Nacimiento',fmtDate('padre_nacimiento'));
+    twoFields('Lugar nacimiento',val('padre_lugar'),'Ciudadania',val('padre_ciudadania'));
+    field('Padre era ciudadano USA al nacer usted',getRadio('padre_ciudadano_usa'));
+    subHeader('MADRE');
+    twoFields('Nombre',val('madre_nombre'),'F. Nacimiento',fmtDate('madre_nacimiento'));
+    twoFields('Lugar nacimiento',val('madre_lugar'),'Ciudadania',val('madre_ciudadania'));
+    field('Madre era ciudadana USA al nacer usted',getRadio('madre_ciudadana_usa'));
+    divider();
+
+    // S6
+    sectionHeader('6','VIAJE PLANEADO');
+    twoFields('Tiene viaje planeado',getRadio('tiene_viaje'),'Fecha de viaje',fmtDate('fecha_viaje'));
+    twoFields('Destino(s)',val('destino_viaje'),'Motivo',getRadio('motivo_viaje'));
+    twoFields('Tramite urgente',getRadio('urgente'),'Tipo pasaporte',getRadio('tipo_pasaporte'));
+    divider();
+
+    // S7
+    sectionHeader('7','CONTACTO DE EMERGENCIA');
+    twoFields('Nombre',val('emerg_nombre'),'Parentesco',val('emerg_parentesco'));
+    twoFields('Telefono',val('emerg_telefono'),'Correo',val('emerg_email'));
+    field('Direccion',val('emerg_direccion'));
+    divider();
+
+    // S8
+    sectionHeader('8','DOCUMENTOS Y DECLARACION');
+    field('Documentos disponibles',getChecked('documentos'));
+    field('Otros documentos',val('otros_docs'));
+    field('Notas adicionales',val('notas_adicionales'));
+    divider();
+
+    // FIRMA
+    checkY(35);
+    doc.setFillColor(240,253,244);doc.roundedRect(M,y,TW,32,3,3,'F');
+    doc.setDrawColor(187,247,208);doc.setLineWidth(.5);doc.roundedRect(M,y,TW,32,3,3,'S');
+    doc.setTextColor(22,101,52);doc.setFontSize(8.5);doc.setFont('helvetica','bold');
+    doc.text('DECLARACION',M+TW/2,y+7,{align:'center'});
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(15,23,42);
+    doc.text('Declaro bajo protesta de decir verdad que la informacion proporcionada es verdadera y completa.',M+4,y+15,{maxWidth:TW-8});
+    doc.setFont('helvetica','bold');
+    doc.text('Firma: '+val('firma'),M+4,y+24);
+    doc.text('Fecha: '+fmtDate('fecha_firma'),M+TW/2+4,y+24);
+    y+=40;
+
+    // FOOTER
+    const pages=doc.internal.getNumberOfPages();
+    for(let i=1;i<=pages;i++){
+      doc.setPage(i);
+      doc.setFillColor(15,23,42);doc.rect(0,279,W,16,'F');
+      doc.setTextColor(180,220,180);doc.setFontSize(7);doc.setFont('helvetica','normal');
+      doc.text('Tramite GO  |  tramitesgomx@gmail.com  |  +52 1 664 529 8312  |  Tijuana, B.C. Mexico  |  tramitego.com',W/2,286,{align:'center'});
+      doc.setTextColor(100,140,100);
+      doc.text(`Pag ${i} de ${pages}`,W-M,286,{align:'right'});
+    }
+    return doc;
+  }
+
+  async function generarPDFyEnviar(){
+    nombreCliente = val('apellidos')+' '+val('nombres');
+    if(val('apellidos')==='No especificado'){alert('Complete al menos su apellido y nombre.');showSection(1);return;}
+    document.getElementById('pdf-loading').classList.add('show');
+    await new Promise(r=>setTimeout(r,100));
+    try{
+      const doc = await generarPDF();
+      const tipoLabel = tipoTramite==='primera'?'PrimerVez':'Renovacion';
+      const fileName = `PasaporteUSA_${tipoLabel}_TramiteGO_${(val('apellidos')+val('nombres')).replace(/\s+/g,'_')}.pdf`;
+      pdfBlob = doc.output('blob');
+      doc.save(fileName);
+      await new Promise(r=>setTimeout(r,600));
+      document.getElementById('pdf-loading').classList.remove('show');
+      mostrarExito(fileName);
+    }catch(e){
+      document.getElementById('pdf-loading').classList.remove('show');
+      alert('Error al generar el PDF. Intente de nuevo.');
+      console.error(e);
+    }
+  }
+
+  function mostrarExito(fileName){
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
+    document.getElementById('progress-wrap').style.display='none';
+    document.getElementById('success-screen').style.display='block';
+    document.getElementById('success-msg').textContent=`El PDF "${fileName}" fue descargado. Ahora ábralo en WhatsApp con Trámite GO.`;
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function abrirWhatsApp(){
+    const tipo = tipoTramite==='primera'?'primera vez (DS-11)':'renovación (DS-82)';
+    const msg=`Hola Trámite GO, le envío mi cuestionario para pasaporte americano — ${tipo}.\n\nNombre: ${nombreCliente}\nFecha: ${new Date().toLocaleDateString('es-MX')}\n\nAdjunto el PDF con toda la información.`;
+    window.open('https://wa.me/5216645298312?text='+encodeURIComponent(msg),'_blank');
+  }
+
+  function descargarOtraVez(){
+    if(!pdfBlob)return;
+    const url=URL.createObjectURL(pdfBlob);
+    const a=document.createElement('a');a.href=url;
+    a.download=`PasaporteUSA_TramiteGO_${nombreCliente.replace(/\s+/g,'_')}.pdf`;
+    a.click();URL.revokeObjectURL(url);
+  }
+
+  function resetForm(){
+    document.getElementById('tipo-intro').style.display='block';
+    document.getElementById('progress-wrap').style.display='none';
+    document.getElementById('success-screen').style.display='none';
+    document.querySelectorAll('input:not([type=radio]):not([type=checkbox])').forEach(i=>i.value='');
+    document.querySelectorAll('textarea').forEach(t=>t.value='');
+    document.querySelectorAll('select').forEach(s=>s.selectedIndex=0);
+    document.querySelectorAll('input[type=radio]').forEach(r=>{r.checked=false;r.closest('.radio-item').classList.remove('selected');});
+    document.querySelectorAll('input[type=checkbox]').forEach(c=>{c.checked=false;c.closest('.check-item').classList.remove('checked');});
+    document.getElementById('fecha_firma').valueAsDate=new Date();
+    document.getElementById('card-primera').classList.remove('selected');
+    document.getElementById('card-renovacion').classList.remove('selected');
+    document.getElementById('btn-start').style.display='none';
+    document.body.className='';
+    tipoTramite='';pdfBlob=null;nombreCliente='';
+    document.querySelectorAll('.card').forEach(c=>c.classList.remove('active'));
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+</script>
+</body>
+</html>
